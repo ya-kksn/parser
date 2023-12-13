@@ -2,27 +2,50 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
-URL = "https://ital-kvartal.ru/kulinarija/"
-
-page = requests.get(URL)
-page.encoding = 'utf-8'
-
-soup = BeautifulSoup(page.text, "html.parser")
-
-all_food = soup.find_all("div", class_="w-grid-item-h")
-links = [link.div.span.a.get('href') for link in all_food]
+URL_KULINARIJA = "https://ital-kvartal.ru/kulinarija/"
+URL_KONDITERSKAJA = "https://ital-kvartal.ru/konditerskaja/"
 
 
-def make_food_list(food):
-    for position in food:
-        string = re.sub(r"(от\s)", repl=" ", string=position.text)
+def get_page(url):
+    page = requests.get(url)
+    page.encoding = 'utf-8'
+    return page
+
+
+def make_food_list(page):
+    soup = BeautifulSoup(page.text, "html.parser")
+    page_items = soup.find_all("div", class_="w-grid-item-h")
+    print(page_items[0])
+    page_links = []
+    for item in page_items:
+        try:
+            page_links.append(item.div.span.a.get('href'))
+        except AttributeError:
+            page_links.append(item.a.get('href'))
+    return page_items, page_links
+
+
+
+def format_food_list(items):
+    for item in items:
+        string = re.sub(r"(от\s)", repl=" ", string=item.text)
         string = re.sub(r"[.)].*$", repl="", string=string).strip("\n")
         yield string
 
 
-if __name__ == '__main__':
-    result = list(make_food_list(all_food))
+def main(url, file_name):
+    page = get_page(url)
+    items, links = make_food_list(page)
+    formatted_items = format_food_list(items)
 
-    with open("menu.txt", 'wt', newline="", encoding="utf-8") as text_in:
-        for i, j in zip(result, links):
-            text_in.write(f'{i}) Ссылка: {j}\n')
+    with open(f"{file_name}.txt", 'wt', newline="", encoding="utf-8") as text_in:
+        for i, j in zip(formatted_items, links):
+            if i != " ":
+                text_in.write(f'{i}) Ссылка: {j}\n')
+            else:
+                text_in.write(f'Торт на заказ Ссылка: {j}\n')
+
+
+if __name__ == '__main__':
+    main(URL_KULINARIJA, "kulinarija")
+    main(URL_KONDITERSKAJA, "konditerskaja")
