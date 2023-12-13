@@ -25,7 +25,6 @@ def make_food_list(page):
     return page_items, page_links
 
 
-
 def format_food_list(items):
     for item in items:
         string = re.sub(r"(от\s)", repl=" ", string=item.text)
