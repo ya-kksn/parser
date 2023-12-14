@@ -15,7 +15,6 @@ def get_page(url):
 def make_food_list(page):
     soup = BeautifulSoup(page.text, "html.parser")
     page_items = soup.find_all("div", class_="w-grid-item-h")
-    print(page_items[0])
     page_links = []
     for item in page_items:
         try:
@@ -32,17 +31,20 @@ def format_food_list(items):
         yield string
 
 
-def main(url, file_name):
-    page = get_page(url)
-    items, links = make_food_list(page)
-    formatted_items = format_food_list(items)
-
+def write_list_to_file(items, links, file_name):
     with open(f"{file_name}.txt", 'wt', newline="", encoding="utf-8") as text_in:
-        for i, j in zip(formatted_items, links):
+        for i, j in zip(items, links):
             if i != " ":
                 text_in.write(f'{i}) Ссылка: {j}\n')
             else:
                 text_in.write(f'Торт на заказ Ссылка: {j}\n')
+
+
+def main(url, file_name):
+    page = get_page(url)
+    items, links = make_food_list(page)
+    formatted_items = format_food_list(items)
+    write_list_to_file(formatted_items, links, file_name)
 
 
 if __name__ == '__main__':
