@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
+
 URL_KULINARIJA = "https://ital-kvartal.ru/kulinarija/"
 URL_KONDITERSKAJA = "https://ital-kvartal.ru/konditerskaja/"
 
@@ -12,26 +13,27 @@ def get_page(url):
     return page
 
 
-def make_food_list(page):
+def find_food_cards(page):
     soup = BeautifulSoup(page.text, "html.parser")
-    page_items = soup.find_all("div", class_="w-grid-item-h")
-    page_links = []
-    for item in page_items:
-        try:
-            page_links.append(item.div.span.a.get('href'))
-        except AttributeError:
-            page_links.append(item.a.get('href'))
-    return page_items, page_links
+    return soup.find_all("div", class_="w-grid-item-h")
 
 
-def format_food_list(items):
-    for item in items:
+def make_food_list(cards):
+    for item in cards:
         string = re.sub(r"(от\s)", repl=" ", string=item.text)
         string = re.sub(r"[.)].*$", repl="", string=string).strip("\n")
         yield string
 
 
-def write_list_to_file(items, links, file_name):
+def make_food_links(cards):
+    for item in cards:
+        try:
+            yield item.div.span.a.get('href')
+        except AttributeError:
+            yield item.a.get('href')
+
+
+def write_data_to_file(items, links, file_name):
     with open(f"{file_name}.txt", 'wt', newline="", encoding="utf-8") as text_in:
         for i, j in zip(items, links):
             if i != " ":
@@ -42,9 +44,10 @@ def write_list_to_file(items, links, file_name):
 
 def main(url, file_name):
     page = get_page(url)
-    items, links = make_food_list(page)
-    formatted_items = format_food_list(items)
-    write_list_to_file(formatted_items, links, file_name)
+    food_cards = find_food_cards(page)
+    food_list = make_food_list(food_cards)
+    food_links = make_food_links(food_cards)
+    write_data_to_file(food_list, food_links, file_name)
 
 
 if __name__ == '__main__':
